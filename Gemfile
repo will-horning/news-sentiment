@@ -1,0 +1,9 @@
+source "http://rubygems.org"
+gem 'open-uri'
+gem 'rss'
+gem 'nokogiri'
+gem 'feedjira'
+gem 'sinatra'
+gem 'sequel'
+gem 'date'
+gem 'json'
