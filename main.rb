@@ -19,7 +19,7 @@ get '/get_date2sentiment/' do
         a["pub_date"] = DateTime.strptime(a["pub_date"], "%Y-%m-%d %H:%M:%S").to_date
     end
     @date2articles = Hash.new([])
-    @articles.each |a| {@date2articles[a["pub_date"]] += [a]}
+    @articles.each {|a| @date2articles[a["pub_date"]] += [a]}
     @date2sentiment = {}
     @date2articles.each do |k, v|
         sum = v.reduce(0) {|sum, a| sum + a["sentiment_value"]}
@@ -31,7 +31,7 @@ end
 
 def update_db()
     articles = []
-    File.open('articles.json', 'r') |f| {articles = JSON.parse(f.read())}
+    File.open('articles.json', 'r') { |f| articles = JSON.parse(f.read())}
     new_articles = read_rss()
     new_articles.each do |e|
         articles.push({:news_source => 'CNN',
@@ -39,7 +39,7 @@ def update_db()
             :sentiment_value => e[:sentiment]
         })
     end
-    File.open('articles.json', 'w') |f| {f.write(JSON.dump(articles))}
+    File.open('articles.json', 'w') {|f| f.write(JSON.dump(articles))}
 end 
 
 def read_rss(rss_url="http://rss.cnn.com/rss/cnn_topstories.rss")
