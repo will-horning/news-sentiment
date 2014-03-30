@@ -3,72 +3,43 @@ require 'rss'
 require 'nokogiri'
 require 'feedjira'
 require 'sinatra'
-require 'sequel'
 require 'date'
 require 'json'
 
-db = Sequel.sqlite('news-sentiment')
-
-get '/' do 
-    # @articles = db[:articles]
-    # @articles = @articles.all.map do |a|
-    #     puts a[:pub_date]
-    #     date = DateTime.strptime(a[:pub_date], "%Y-%m-%d %H:%M:%S").to_date
-    #     {:pub_date => date, :news_source => a[:news_source], :sentiment_value => a[:sentiment_value]}
-    # end
-    # @date2articles = Hash.new([])
-    # @articles.each {|a| @date2articles[a[:pub_date]] += [a]}
-    # @date2sentiment = {}
-    # @date2articles.each do |k, v|
-    #     sum = v.reduce(0) {|sum, a| sum + a[:sentiment_value]}
-    #     mean = sum.to_f / v.size
-    #     @date2sentiment[k] = mean
-    # end 
+get '/' do
     erb :index
 end
 
 get '/get_date2sentiment/' do
-   @articles = db[:articles]
-    @articles = @articles.all.map do |a|
-        puts a[:pub_date]
-        date = DateTime.strptime(a[:pub_date], "%Y-%m-%d %H:%M:%S").to_date
-        {:pub_date => date, :news_source => a[:news_source], :sentiment_value => a[:sentiment_value]}
+    @articles = []
+    File.open('articles.json', 'r') do |f|
+        @articles = JSON.parse(f.read())
+    end
+    @articles = @articles.each do |a|
+        a["pub_date"] = DateTime.strptime(a["pub_date"], "%Y-%m-%d %H:%M:%S").to_date
     end
     @date2articles = Hash.new([])
-    @articles.each {|a| @date2articles[a[:pub_date]] += [a]}
+    @articles.each |a| {@date2articles[a["pub_date"]] += [a]}
     @date2sentiment = {}
     @date2articles.each do |k, v|
-        sum = v.reduce(0) {|sum, a| sum + a[:sentiment_value]}
+        sum = v.reduce(0) {|sum, a| sum + a["sentiment_value"]}
         mean = sum.to_f / v.size
         @date2sentiment[k] = mean
     end 
     return {"dates" => @date2sentiment.keys, "sentiments" => @date2sentiment.values}.to_json
 end
 
-# def test
-#     db = Sequel.sqlite('news-sentiment')
-#     @articles = db[:articles]
-#     @articles = @articles.all.map do |a|
-#         puts a[:pub_date]
-#         date = DateTime.strptime(a[:pub_date], "%Y-%m-%d %H:%M:%S").to_date
-#         {:pub_date => date, :news_source => a[:news_source], :sentiment_value => a[:sentiment_value]}
-#     end
-#     @date2articles = Hash.new([])
-#     @articles.each {|a| @date2articles[a[:pub_date]] += [a]}
-#     return @date2articles
-# end
-
 def update_db()
-    db = Sequel.sqlite('news-sentiment')
-    articles = db[:articles]
+    articles = []
+    File.open('articles.json', 'r') |f| {articles = JSON.parse(f.read())}
     new_articles = read_rss()
     new_articles.each do |e|
-        articles.insert(
-            :news_source => 'CNN',
-            :pub_date => e[:date],
+        articles.push({:news_source => 'CNN',
+            :pub_date => e[:date].sub("UTC", ""),
             :sentiment_value => e[:sentiment]
-        )
+        })
     end
+    File.open('articles.json', 'w') |f| {f.write(JSON.dump(articles))}
 end 
 
 def read_rss(rss_url="http://rss.cnn.com/rss/cnn_topstories.rss")
