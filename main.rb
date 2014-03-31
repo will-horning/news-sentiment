@@ -35,7 +35,7 @@ def update_db()
     new_articles = read_rss()
     new_articles.each do |e|
         articles.push({:news_source => 'CNN',
-            :pub_date => e[:date].sub("UTC", ""),
+            :pub_date => e[:date].to_s.sub("UTC", ""),
             :sentiment_value => e[:sentiment]
         })
     end
@@ -49,7 +49,6 @@ def read_rss(rss_url="http://rss.cnn.com/rss/cnn_topstories.rss")
     entries = feed.entries.select {|e| not e.url.include? "video"}
     entries = entries.select {|e| not e.url.include? "gallery"}
     return entries.map do |e|
-        puts e.url
         page = Nokogiri::HTML(open(e.url))
         content = page.css('div.cnn_strycntntlft').css('p').inner_html
         sentiment = get_sentiment_value(content, word2value)
