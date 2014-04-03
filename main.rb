@@ -26,7 +26,9 @@ get '/get_date2sentiment/' do
         mean = sum.to_f / v.size
         @date2sentiment[k] = mean
     end 
-    return {"dates" => @date2sentiment.keys, "sentiments" => @date2sentiment.values}.to_json
+    sorted_keys = @date2sentiment.keys.sort
+    sorted_vals = sorted_keys.map {|k| @date2sentiment[k]}
+    return {"dates" => sorted_keys, "sentiments" => sorted_vals}.to_json
 end
 
 def update_db()
